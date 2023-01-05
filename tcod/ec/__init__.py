@@ -119,6 +119,8 @@ class ComponentDict:
 
     def __contains__(self, key: Type[T]) -> bool:
         """Return true if a type of component exists in this entity."""
+        if __debug__:
+            self.__assert_key(key)
         return key in self._components
 
     def __len__(self) -> int:
