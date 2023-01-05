@@ -16,7 +16,7 @@
             "type": "python",
             "request": "launch",
             "module": "pytest",
-            "preLaunchTask": "develop tcod-camera",
+            "preLaunchTask": "develop package",
         },
         {
             "name": "Documentation: Launch Chrome",

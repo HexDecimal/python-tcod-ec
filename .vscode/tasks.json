@@ -5,7 +5,7 @@
     "tasks": [
         {
             // Installs tcod in editable mode.
-            "label": "develop tcod-camera",
+            "label": "develop package",
             "type": "shell",
             "command": "python -m pip install -e ."
         },

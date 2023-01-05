@@ -28,8 +28,8 @@ name = "tcod.ec"
 
 [project.urls]
 Home = "https://github.com/HexDecimal"
-Changelog = "https://github.com/HexDecimal/python-tcod-camera/blob/main/CHANGELOG.md"
-Source = "https://github.com/HexDecimal/python-tcod-camera"
+Changelog = "https://github.com/HexDecimal/python-tcod-ec/blob/main/CHANGELOG.md"
+Source = "https://github.com/HexDecimal/python-tcod-ec"
 
 [tool.black] # https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#configuration-via-a-file
 target-version = ["py38"]
