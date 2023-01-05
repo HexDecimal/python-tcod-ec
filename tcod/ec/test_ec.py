@@ -27,6 +27,11 @@ class Missing:
     pass
 
 
+@attrs.define
+class Recursive:
+    entity: tcod.ec.ComponentDict | None = None
+
+
 base = Base()
 derived = Derived()
 foo = Foo()
@@ -65,3 +70,9 @@ def test_ComponentDict() -> None:
     assert entity.get(Base) is None
     entity[Base] = base
     assert entity.get(Base) is base
+
+
+def test_ComponentDict_recursive() -> None:
+    entity = tcod.ec.ComponentDict()
+    entity.set(Recursive(entity))
+    repr(entity)

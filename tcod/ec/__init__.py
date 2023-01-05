@@ -16,22 +16,56 @@ T = TypeVar("T")
 
 
 def abstract_component(cls: Type[T]) -> Type[T]:
+    """Register class `cls` as an abstract component and return it.
+
+    Subclasses of this `cls` will now use `cls` as the key when being accessed in :any:`ComponentDict`.
+    This means that ComponentDict can only hold one unique instance of this subclass.
+
+    Example::
+
+        >>> from tcod.ec import ComponentDict, abstract_component
+        >>> from attrs import define
+        >>> @abstract_component
+        ... @define
+        ... class Base:
+        ...     pass
+        >>> @define
+        ... class Derived(Base):
+        ...     pass
+        >>> entity = ComponentDict()
+        >>> Base in entity
+        False
+        >>> entity[Base] = Derived()
+        >>> Base in entity
+        True
+        >>> entity[Base]
+        Derived()
+        >>> entity[Base] = Base()
+        >>> entity[Base]
+        Base()
+        >>> entity.set(Derived())
+        >>> entity[Base]
+        Derived()
+    """
     cls._COMPONENT_TYPE = cls  # type: ignore[attr-defined]
     return cls
+
+
+def _convert_components(components: Iterable[object]) -> Dict[Type[object], object]:
+    """Convert a sequence of objects to a component dictionary."""
+    return {getattr(component, "_COMPONENT_TYPE", component.__class__): component for component in components}
 
 
 @attrs.define(eq=False)
 class ComponentDict:
     """A dictionary of component instances, addressed with their class as the key."""
 
-    _components: Dict[Type[object], object]
+    _components: Dict[Type[object], object] = attrs.field(default=(), converter=_convert_components)
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
 
-    def __init__(self, components: Iterable[object] = ()):
-        self._components: Dict[Type[object], object] = {}
-        self.set(*components)
-
-    def __assert_key(self, key: T) -> None:
+    @staticmethod
+    def __assert_key(key: T) -> None:
+        """Assert that this key is either an abstract component or an anonymous component."""
         real_key = getattr(key, "_COMPONENT_TYPE", key)
         assert (
             real_key is key
