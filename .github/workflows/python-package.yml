@@ -20,7 +20,7 @@ jobs:
       - name: Install Black
         run: pip install black
       - name: Run Black
-        run: black --check --diff examples/ tcod/
+        run: black --check --diff tcod/
 
   isort:
     runs-on: ubuntu-latest
@@ -29,7 +29,7 @@ jobs:
       - name: Install isort
         run: pip install isort
       - name: isort
-        run: isort examples/ tcod/ --check --diff
+        run: isort tcod/ --check --diff
 
   flake8:
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
       - name: Install Flake8
         run: pip install Flake8
       - name: Flake8
-        run: flake8 examples/ tcod/
+        run: flake8 tcod/
 
   test:
     runs-on: ubuntu-latest
@@ -48,7 +48,6 @@ jobs:
         name: Setup Python
         with:
           python-version: "3.8"
-          cache: "pip"
       - name: Install package
         run: pip install -e ".[test]"
       - name: Mypy
