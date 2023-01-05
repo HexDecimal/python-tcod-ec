@@ -1,0 +1,55 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.mypyArgs": [
+        "--follow-imports=silent",
+        "--show-column-numbers"
+    ],
+    "editor.formatOnSave": true,
+    "files.trimFinalNewlines": true,
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "cSpell.words": [
+        "Benesch",
+        "codecov",
+        "dtype",
+        "genindex",
+        "intersphinx",
+        "isort",
+        "ivar",
+        "libtcod",
+        "liskin",
+        "maxdepth",
+        "modindex",
+        "mypy",
+        "Mypy",
+        "Numpad",
+        "PAGEDOWN",
+        "PAGEUP",
+        "pytest",
+        "quickstart",
+        "RMASK",
+        "rtype",
+        "scancode",
+        "tcod",
+        "toctree",
+        "typehints",
+        "WASD",
+        "WAXD",
+        "WINDOWLEAVE"
+    ],
+    "python.formatting.provider": "black",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true // Runs isort.
+    },
+    "editor.rulers": [
+        120
+    ],
+    "python.testing.pytestArgs": [
+        "tcod"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+}
