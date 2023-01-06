@@ -12,6 +12,7 @@
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,
     "cSpell.words": [
+        "automodule",
         "Benesch",
         "codecov",
         "dtype",
@@ -36,6 +37,7 @@
         "tcod",
         "toctree",
         "typehints",
+        "undoc",
         "WASD",
         "WAXD",
         "WINDOWLEAVE"
