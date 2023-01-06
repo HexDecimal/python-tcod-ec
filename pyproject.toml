@@ -27,7 +27,7 @@ test = ["pytest>=7.2.0", "pytest-cov", "mypy>=0.991"]
 name = "tcod.ec"
 
 [project.urls]
-Home = "https://github.com/HexDecimal"
+Home = "https://github.com/HexDecimal/python-tcod-ec"
 Changelog = "https://github.com/HexDecimal/python-tcod-ec/blob/main/CHANGELOG.md"
 Source = "https://github.com/HexDecimal/python-tcod-ec"
 
