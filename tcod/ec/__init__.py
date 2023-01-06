@@ -32,13 +32,12 @@ def abstract_component(cls: Type[T]) -> Type[T]:
         >>> @define
         ... class Derived(Base):
         ...     pass
-        >>> entity = ComponentDict()
-        >>> Base in entity
-        False
-        >>> entity[Base] = Derived()
+        >>> entity = ComponentDict([Derived()])
+        >>> entity.set(Derived())
+        >>> entity[Base] = Derived()  # Note there can only be one instance assigned to an abstract component class.
         >>> Base in entity
         True
-        >>> entity[Base]
+        >>> entity[Base]  # Access Base or Derived with the abstract component class.
         Derived()
         >>> entity[Base] = Base()
         >>> entity[Base]
@@ -58,7 +57,38 @@ def _convert_components(components: Iterable[object]) -> Dict[Type[object], obje
 
 @attrs.define(eq=False)
 class ComponentDict:
-    """A dictionary of component instances, addressed with their class as the key."""
+    """A dictionary of component instances, addressed with their class as the key.
+
+    This class implements the idea of a ``Dict[Type[T], T]`` type-hint.
+    This allows adding data and behavior to an object without needing to define which classes the object holds ahead of time.
+
+    An anonymous component is any class without a parent class marked with :any:`abstract_component`::
+
+        >>> from attrs import define
+        >>> from tcod.ec import ComponentDict
+        >>> @attrs.define
+        ... class Position:  # Any normal class works as a component.
+        ...     x: int = 0
+        ...     y: int = 0
+        >>> entity = ComponentDict([Position()])  # Add Position during initialization.
+        >>> entity.set(Position())  # Or with ComponentDict.set.
+        >>> entity[Position] = Position()  # Or explicitly by key.
+        >>> entity[Position]  # Access the instance with the class as the key.
+        Position(x=0, y=0)
+        >>> Position in entity  # Test if an entity has a component.
+        True
+        >>> @attrs.define
+        ... class Cursor(Position):  # If you need to store a 2nd Position then a subclass can be made.
+        ...     pass
+        >>> entity[Cursor] = Cursor()
+        >>> entity
+        ComponentDict([Position(x=0, y=0), Cursor(x=0, y=0)])
+        >>> ComponentDict([Position(1, 2), Position(3, 4)])  # The same component always overwrites the previous one.
+        ComponentDict([Position(x=3, y=4)])
+
+    If you want to assign a subclass to a parents key then you should decorate that parent class with the
+    :any:`abstract_component` function.
+    """
 
     _components: Dict[Type[object], object] = attrs.field(default=(), converter=_convert_components)
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""

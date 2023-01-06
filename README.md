@@ -23,7 +23,7 @@ The key is the class of the component and can only be assigned one instance of t
 ... class Graphic:
 ...     ch: str = "@"
 >>> entity = ComponentDict([Position(1, 2), Graphic("!")])
->>> Position in entity  # Check if a component is defined in this entity.
+>>> Position in entity  # Check if an entity has a component.
 True
 >>> entity[Position].y = 10  # Access components using the class as the key.
 >>> entity[Position]
