@@ -32,7 +32,6 @@ Position(x=1, y=10)
 >>> entity
 ComponentDict([Position(x=1, y=10), Graphic(ch='?')])
 >>> entity.set(Graphic("#"))  # Implicit setting.
->>> entity
 ComponentDict([Position(x=1, y=10), Graphic(ch='#')])
 >>> del entity[Graphic]  # Components can be deleted.
 >>> entity
@@ -47,6 +46,7 @@ ComponentDict([Position(x=1, y=10)])
 ... class Derived(Base):
 ...     pass
 >>> entity.set(Derived())  # Derived classes may be set implicitly.
+ComponentDict([Position(x=1, y=10), Derived()])
 >>> entity[Base] = Derived()  # Or explicitly assigned to the abstract key.
 >>> Base in entity
 True

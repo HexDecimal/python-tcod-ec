@@ -11,6 +11,7 @@ import reprlib
 from typing import Any, Dict, Iterable, Iterator, Optional, Type, TypeVar
 
 import attrs
+from typing_extensions import Self
 
 T = TypeVar("T")
 
@@ -34,6 +35,7 @@ def abstract_component(cls: Type[T]) -> Type[T]:
         ...     pass
         >>> entity = ComponentDict([Derived()])
         >>> entity.set(Derived())
+        ComponentDict([Derived()])
         >>> entity[Base] = Derived()  # Note there can only be one instance assigned to an abstract component class.
         >>> Base in entity
         True
@@ -43,6 +45,7 @@ def abstract_component(cls: Type[T]) -> Type[T]:
         >>> entity[Base]
         Base()
         >>> entity.set(Derived())
+        ComponentDict([Derived()])
         >>> entity[Base]
         Derived()
     """
@@ -72,6 +75,7 @@ class ComponentDict:
         ...     y: int = 0
         >>> entity = ComponentDict([Position()])  # Add Position during initialization.
         >>> entity.set(Position())  # Or with ComponentDict.set.
+        ComponentDict([Position(x=0, y=0)])
         >>> entity[Position] = Position()  # Or explicitly by key.
         >>> entity[Position]  # Access the instance with the class as the key.
         Position(x=0, y=0)
@@ -101,10 +105,11 @@ class ComponentDict:
             real_key is key
         ), f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
 
-    def set(self, *components: T) -> None:
-        """Assign or replace the components of this entity."""
+    def set(self, *components: T) -> Self:
+        """Assign or replace the components of this entity and return self."""
         for component in components:
             self._components[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
+        return self
 
     def get(self, key: Type[T]) -> Optional[T]:
         """Return a component, or None if it doesn't exist."""

@@ -71,6 +71,8 @@ def test_ComponentDict() -> None:
     entity[Base] = base
     assert entity.get(Base) is base
 
+    assert entity.set() is entity
+
 
 def test_ComponentDict_recursive() -> None:
     entity = tcod.ec.ComponentDict()
