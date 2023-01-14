@@ -8,7 +8,7 @@ from __future__ import annotations
 __version__ = "1.0.0"
 
 import reprlib
-from typing import Dict, Iterable, Iterator, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, Iterator, Optional, Type, TypeVar
 
 import attrs
 
@@ -50,7 +50,7 @@ def abstract_component(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def _convert_components(components: Iterable[object]) -> Dict[Type[object], object]:
+def _convert_components(components: Iterable[object]) -> Dict[Type[Any], Any]:
     """Convert a sequence of objects to a component dictionary."""
     return {getattr(component, "_COMPONENT_TYPE", component.__class__): component for component in components}
 
@@ -90,7 +90,7 @@ class ComponentDict:
     :any:`abstract_component` function.
     """
 
-    _components: Dict[Type[object], object] = attrs.field(default=(), converter=_convert_components)
+    _components: Dict[Type[Any], Any] = attrs.field(default=(), converter=_convert_components)
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
 
     @staticmethod
@@ -110,7 +110,7 @@ class ComponentDict:
         """Return a component, or None if it doesn't exist."""
         if __debug__:
             self.__assert_key(key)
-        return self._components.get(key)  # type: ignore[return-value]  # Cast to T.
+        return self._components.get(key)  # Cast to Optional[T].
 
     def __getitem__(self, key: Type[T]) -> T:
         """Return a component of type, raises KeyError if it doesn't exist."""
@@ -118,7 +118,7 @@ class ComponentDict:
             self.__assert_key(key)
         value = self._components.get(key)
         if value is not None:
-            return value  # type: ignore[return-value]  # Cast to T.
+            return value  # type: ignore[no-any-return]  # Cast to T.
         return self.__missing__(key)
 
     def __missing__(self, key: Type[T]) -> T:
