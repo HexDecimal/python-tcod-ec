@@ -5,7 +5,7 @@ This makes them simpler to use but they have fewer features.
 """
 from __future__ import annotations
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 import reprlib
 from typing import Any, Dict, Iterable, Iterator, Optional, Type, TypeVar
@@ -159,7 +159,7 @@ class ComponentDict:
     def __contains__(self, keys: Type[T] | Iterable[Type[T]]) -> bool:
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
 
-        .. versionchanged:: Unreleased
+        .. versionchanged:: 1.2
             Now supports checking multiple types at once.
         """
         if isinstance(keys, type):
