@@ -79,7 +79,7 @@ class ComponentDict:
         >>> entity[Position] = Position()  # Or explicitly by key.
         >>> entity[Position]  # Access the instance with the class as the key.
         Position(x=0, y=0)
-        >>> Position in entity  # Test if an entity has a component.
+        >>> (Position,) in entity  # Test if an entity has a set of components.
         True
         >>> @attrs.define
         ... class Cursor(Position):  # If you need to store a 2nd Position then a subclass can be made.
@@ -106,7 +106,11 @@ class ComponentDict:
         ), f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
 
     def set(self, *components: T) -> Self:  # type: ignore[valid-type]  # Needs mypy >0.991
-        """Assign or replace the components of this entity and return self."""
+        """Assign or replace the components of this entity and return self.
+
+        .. versionchanged:: 1.1
+            Now returns self.
+        """
         for component in components:
             self._components[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
         return self
@@ -152,11 +156,18 @@ class ComponentDict:
         """Delete a component."""
         del self._components[key]
 
-    def __contains__(self, key: Type[T]) -> bool:
-        """Return true if a type of component exists in this entity."""
+    def __contains__(self, keys: Type[T] | Iterable[Type[T]]) -> bool:
+        """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
+
+        .. versionchanged:: Unreleased
+            Now supports checking multiple types at once.
+        """
+        if isinstance(keys, type):
+            keys = (keys,)
         if __debug__:
-            self.__assert_key(key)
-        return key in self._components
+            for key in keys:
+                self.__assert_key(key)
+        return all(key in self._components for key in keys)
 
     def __len__(self) -> int:
         """Return the number of components contained in this object."""
