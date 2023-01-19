@@ -38,6 +38,7 @@
         "toctree",
         "typehints",
         "undoc",
+        "unpickle",
         "WASD",
         "WAXD",
         "WINDOWLEAVE"

@@ -1,11 +1,23 @@
 from __future__ import annotations
 
 import pickle
+from typing import Iterable
 
 import attrs
 import pytest
 
 import tcod.ec
+
+
+class ComponentDictNode(tcod.ec.ComponentDict):
+    """Complex subclass for testing pickle."""
+
+    __slots__ = ("children", "__dict__")
+
+    def __init__(self, components: Iterable[object] = (), children: Iterable[ComponentDictNode] = ()) -> None:
+        super().__init__(components)
+        self.children = list(children)
+        self.name = "Name"
 
 
 @tcod.ec.abstract_component
@@ -88,8 +100,23 @@ def test_ComponentDict_pickle() -> None:
     assert repr(clone) == "ComponentDict([Derived(), Foo()])"
 
 
+def test_ComponentDict_pickle_subclass() -> None:
+    entity = ComponentDictNode([derived, foo], [ComponentDictNode([foo])])
+    entity.name = "Top"
+    clone: ComponentDictNode = pickle.loads(pickle.dumps(entity))
+    assert clone.name == "Top"
+    assert clone.children[0].name == "Name"
+    assert repr(clone) == "ComponentDictNode([Derived(), Foo()])"
+
+
 def test_ComponentDict_unpickle_v1_1() -> None:
     # Makes sure v1.1 ComponentDict is unpicklable.
-    ComponentDict_v1_1 = b"\x80\x04\x95r\x00\x00\x00\x00\x00\x00\x00\x8c\x07tcod.ec\x94\x8c\rComponentDict\x94\x93\x94)\x81\x94}\x94\x8c\x0b_components\x94}\x94(\x8c\nec.test_ec\x94\x8c\x04Base\x94\x93\x94h\x07\x8c\x07Derived\x94\x93\x94)\x81\x94}\x94bh\x07\x8c\x03Foo\x94\x93\x94h\x0f)\x81\x94}\x94busb."
+    ComponentDict_v1_1 = b"\x80\x04\x95r\x00\x00\x00\x00\x00\x00\x00\x8c\x07tcod.ec\x94\x8c\rComponentDict\x94\x93\x94)\x81\x94}\x94\x8c\x0b_components\x94}\x94(\x8c\nec.test_ec\x94\x8c\x04Base\x94\x93\x94h\x07\x8c\x07Derived\x94\x93\x94)\x81\x94}\x94bh\x07\x8c\x03Foo\x94\x93\x94h\x0f)\x81\x94}\x94busb."  # cspell: disable-line
     clone = pickle.loads(ComponentDict_v1_1)
+    assert repr(clone) == "ComponentDict([Derived(), Foo()])"
+
+
+def test_ComponentDict_unpickle_v2() -> None:
+    ComponentDict_v2 = b"\x80\x04\x95h\x00\x00\x00\x00\x00\x00\x00\x8c\x07tcod.ec\x94\x8c\rComponentDict\x94\x93\x94)\x81\x94}\x94\x8c\x0b_components\x94\x8c\x0ftcod.ec.test_ec\x94\x8c\x07Derived\x94\x93\x94)\x81\x94}\x94bh\x06\x8c\x03Foo\x94\x93\x94)\x81\x94}\x94b\x86\x94sb."  # cspell: disable-line
+    clone = pickle.loads(ComponentDict_v2)
     assert repr(clone) == "ComponentDict([Derived(), Foo()])"

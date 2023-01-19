@@ -10,7 +10,6 @@ __version__ = "1.2.0"
 import reprlib
 from typing import Any, Dict, Iterable, Iterator, Optional, Type, TypeVar
 
-import attrs
 from typing_extensions import Self
 
 T = TypeVar("T")
@@ -53,12 +52,6 @@ def abstract_component(cls: Type[T]) -> Type[T]:
     return cls
 
 
-def _convert_components(components: Iterable[object]) -> Dict[Type[Any], Any]:
-    """Convert a sequence of objects to a component dictionary."""
-    return {getattr(component, "_COMPONENT_TYPE", component.__class__): component for component in components}
-
-
-@attrs.define(eq=False)
 class ComponentDict:
     """A dictionary of component instances, addressed with their class as the key.
 
@@ -67,7 +60,7 @@ class ComponentDict:
 
     An anonymous component is any class without a parent class marked with :any:`abstract_component`::
 
-        >>> from attrs import define
+        >>> import attrs
         >>> from tcod.ec import ComponentDict
         >>> @attrs.define
         ... class Position:  # Any normal class works as a component.
@@ -94,8 +87,14 @@ class ComponentDict:
     :any:`abstract_component` function.
     """
 
-    _components: Dict[Type[Any], Any] = attrs.field(default=(), converter=_convert_components)
+    __slots__ = ("_components", "__weakref__")
+
+    _components: Dict[Type[Any], Any]
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
+
+    def __init__(self, components: Iterable[object] = ()) -> None:
+        self._components = {}
+        self.set(*components)
 
     @staticmethod
     def __assert_key(key: T) -> None:
@@ -129,6 +128,39 @@ class ComponentDict:
         if value is not None:
             return value  # type: ignore[no-any-return]  # Cast to T.
         return self.__missing__(key)
+
+    def __setstate__(self, state: Any) -> None:
+        """Unpickle instances from 1.0 or later, or complex subclasses from 2.0 or later.
+
+        Component classes can change between picking and unpickling, and component order should be preserved.
+        """
+        # Normalize attrs handling.
+        dict_state: Dict[str, Any] = state[1] if isinstance(state, tuple) else state
+
+        components = dict_state["_components"]
+        del dict_state["_components"]
+        if isinstance(components, dict):  # Convert v1.1 _components attribute into instance list.
+            components = components.values()
+
+        for attr, value in dict_state.items():
+            setattr(self, attr, value)
+
+        # Unpack components with side-effects.
+        self._components = {}
+        self.set(*components)
+
+    def __getstate__(self) -> Any:
+        """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
+        state = {}
+        for cls in self.__class__.__mro__:
+            for attr in getattr(cls, "__slots__", ()):
+                if not hasattr(self, attr):
+                    continue
+                if attr == "__weakref__":
+                    continue
+                state[attr] = getattr(self, attr)
+        state["_components"] = tuple(state["_components"].values())
+        return state
 
     def __missing__(self, key: Type[T]) -> T:
         '''Called when a key is missing.  Raises KeyError with the missing key.
