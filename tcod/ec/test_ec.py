@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import copy
 import pickle
-from typing import Iterable
+from typing import Dict, Iterable, Type, TypeVar
 
 import attrs
 import pytest
 
 import tcod.ec
+
+T = TypeVar("T")
 
 
 class ComponentDictNode(tcod.ec.ComponentDict):
@@ -29,6 +32,11 @@ class Base:
 @attrs.define
 class Derived(Base):
     pass
+
+
+@attrs.define
+class Abstract:
+    value: Base
 
 
 @attrs.define
@@ -120,3 +128,44 @@ def test_ComponentDict_unpickle_v2() -> None:
     ComponentDict_v2 = b"\x80\x04\x95h\x00\x00\x00\x00\x00\x00\x00\x8c\x07tcod.ec\x94\x8c\rComponentDict\x94\x93\x94)\x81\x94}\x94\x8c\x0b_components\x94\x8c\x0ftcod.ec.test_ec\x94\x8c\x07Derived\x94\x93\x94)\x81\x94}\x94bh\x06\x8c\x03Foo\x94\x93\x94)\x81\x94}\x94b\x86\x94sb."  # cspell: disable-line
     clone = pickle.loads(ComponentDict_v2)
     assert repr(clone) == "ComponentDict([Derived(), Foo()])"
+
+
+def test_ComponentDict_copy() -> None:
+    caught: Dict[tcod.ec.ComponentDict, Dict[Type[object], object]] = {}
+
+    def _catch_components(entity: tcod.ec.ComponentDict, kind: Type[T], value: T | None, old_value: T | None) -> None:
+        caught.setdefault(entity, {})
+        caught[entity][kind] = value
+
+    tcod.ec.ComponentDict.global_observers.append(_catch_components)
+    try:
+        original = tcod.ec.ComponentDict([Foo()])
+        shallow = copy.copy(original)
+        assert original[Foo] == shallow[Foo]
+        assert original[Foo] is shallow[Foo]
+        deep = copy.deepcopy(original)
+        assert original[Foo] == deep[Foo]
+        assert original[Foo] is not deep[Foo]
+
+        # Copying triggers observable side-effects.
+        assert Foo in caught[original]
+        assert Foo in caught[shallow]
+        assert Foo in caught[deep]
+    finally:
+        tcod.ec.ComponentDict.global_observers.remove(_catch_components)
+
+
+def _migrate_derived(entity: tcod.ec.ComponentDict, key: Type[T], value: T | None, old_value: T | None) -> None:
+    """Convert Base and Derived to being held by Abstract."""
+    if isinstance(value, Base):
+        entity.set(Abstract(value))
+        del entity[key]
+
+
+def test_abstract_migrate() -> None:
+    tcod.ec.ComponentDict.global_observers.append(_migrate_derived)
+    try:
+        entity = tcod.ec.ComponentDict([derived])
+        assert repr(entity) == "ComponentDict([Abstract(value=Derived())])"
+    finally:
+        tcod.ec.ComponentDict.global_observers.remove(_migrate_derived)

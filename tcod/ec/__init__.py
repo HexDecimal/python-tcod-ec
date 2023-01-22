@@ -9,11 +9,14 @@ __version__ = "1.2.0"
 
 import reprlib
 import warnings
-from typing import Any, Dict, Iterable, Iterator, Optional, Type, TypeVar
+from typing import Any, Callable, ClassVar, Dict, Iterable, Iterator, List, Optional, Type, TypeVar
 
 from typing_extensions import Self
 
 T = TypeVar("T")
+
+
+ComponentDictObserver = Callable[["ComponentDict", Type[T], Optional[T], Optional[T]], None]
 
 
 def abstract_component(cls: Type[T]) -> Type[T]:
@@ -84,8 +87,6 @@ class ComponentDict:
     This class implements the idea of a ``Dict[Type[T], T]`` type-hint.
     This allows adding data and behavior to an object without needing to define which classes the object holds ahead of time.
 
-    An anonymous component is any class without a parent class marked with :any:`abstract_component`::
-
         >>> import attrs
         >>> from tcod.ec import ComponentDict
         >>> @attrs.define
@@ -109,14 +110,55 @@ class ComponentDict:
         >>> ComponentDict([Position(1, 2), Position(3, 4)])  # The same component always overwrites the previous one.
         ComponentDict([Position(x=3, y=4)])
 
-    If you want to assign a subclass to a parents key then you should decorate that parent class with the
-    :any:`abstract_component` function.
+    Custom functions can be added to the class variable :any:`global_observers` to trigger side-effects on component assignment.
+    This can be used to register components to a global system, handle save migration, or other effects::
+
+        >>> @attrs.define(frozen=True)
+        ... class Position():
+        ...     x: int = 0
+        ...     y: int = 0
+        >>> def print_changes(entity: ComponentDict, kind: Type[Any], value: Any | None, old_value: Any | None) -> None:
+        ...     print(f"{kind.__name__}: {old_value} -> {value}")
+        >>> ComponentDict.global_observers.append(print_changes)
+        >>> entity = ComponentDict([Position()])
+        Position: None -> Position(x=0, y=0)
+        >>> entity.set(Position(1, 2))
+        Position: Position(x=0, y=0) -> Position(x=1, y=2)
+        ComponentDict([Position(x=1, y=2)])
+        >>> del entity[Position]
+        Position: Position(x=1, y=2) -> None
+        >>> ComponentDict.global_observers.remove(print_changes)
     """
 
     __slots__ = ("_components", "__weakref__")
 
     _components: Dict[Type[Any], Any]
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
+
+    global_observers: ClassVar[List[ComponentDictObserver[Any]]] = []
+    '''A class variable of functions to call with component changes.
+
+    Unpickled and copied objects are observed as if their components are newly created.
+
+    These work best with frozen immutable types as components if you want to observe all value changes.
+
+    This can be used to improvise the systems of ECS.
+    Observers can collect types of components in a global registry.
+
+    Example::
+
+        from typing import Any, Type
+        import tcod.ec
+
+        def my_observer(entity: ComponentDict, kind: Type[Any], value: Any | None, old_value: Any | None) -> None:
+            """Print observed changes in components."""
+            print(f"{entity=}, {kind=}, {value=}, {old_value=}")
+
+        tcod.ec.ComponentDict.global_observers.append(my_observer)
+
+    .. warning::
+        Components in a garbage collected entity are not observed as being deleted.
+    '''
 
     def __init__(self, components: Iterable[object] = ()) -> None:
         self._components = {}
@@ -137,7 +179,7 @@ class ComponentDict:
             Now returns self.
         """
         for component in components:
-            self._components[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
+            self[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
         return self
 
     def get(self, key: Type[T]) -> Optional[T]:
@@ -159,6 +201,9 @@ class ComponentDict:
         """Unpickle instances from 1.0 or later, or complex subclasses from 2.0 or later.
 
         Component classes can change between picking and unpickling, and component order should be preserved.
+
+        Side-effects are triggered.
+        The unpickled object acts as if its components are newly assigned to it when observed.
         """
         # Normalize attrs handling.
         dict_state: Dict[str, Any] = state[1] if isinstance(state, tuple) else state
@@ -208,11 +253,17 @@ class ComponentDict:
         valid_key = getattr(value, "_COMPONENT_TYPE", value.__class__)
         if key is not valid_key:
             raise TypeError(f"{value!r} is being assigned to {key!r} but it belongs to {valid_key!r} instead!")
+        old_value = self._components.get(key)
         self._components[key] = value
+        for observer in self.global_observers:
+            observer(self, key, value, old_value)
 
     def __delitem__(self, key: Type[T]) -> None:
         """Delete a component."""
+        old_value = self._components[key]
         del self._components[key]
+        for observer in self.global_observers:
+            observer(self, key, None, old_value)
 
     def __contains__(self, keys: Type[T] | Iterable[Type[T]]) -> bool:
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
