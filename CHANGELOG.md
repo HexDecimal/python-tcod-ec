@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Should still be able to unpickle plain instances pickled in v1.
 - No longer depends on attrs.
 
+### Deprecated
+- `abstract_component` has been deprecated.  Components storing base classes should be used instead.
+
 ## [1.2.0] - 2023-01-14
 ### Added
 - `ComponentDict` can now be tested for multiple components at once.  Example: `(Foo, Bar) in component_dict`

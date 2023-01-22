@@ -37,22 +37,4 @@ ComponentDict([Position(x=1, y=10), Graphic(ch='#')])
 >>> entity
 ComponentDict([Position(x=1, y=10)])
 
-# Abstract components can be registered with tcod.ec.abstract_component.
->>> @abstract_component
-... @define
-... class Base:
-...     pass
->>> @define
-... class Derived(Base):
-...     pass
->>> entity.set(Derived())  # Derived classes may be set implicitly.
-ComponentDict([Position(x=1, y=10), Derived()])
->>> entity[Base] = Derived()  # Or explicitly assigned to the abstract key.
->>> Base in entity
-True
->>> entity[Base]  # Any derived classes use the base class as the key.
-Derived()
->>> entity
-ComponentDict([Position(x=1, y=10), Derived()])
-
 ```
