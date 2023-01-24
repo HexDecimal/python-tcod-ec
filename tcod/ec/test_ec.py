@@ -95,6 +95,10 @@ def test_ComponentDict() -> None:
 
     assert entity.set() is entity
 
+    entity = tcod.ec.ComponentDict([base])
+    entity.clear()
+    assert list(entity) == []
+
 
 def test_ComponentDict_recursive() -> None:
     entity = tcod.ec.ComponentDict()

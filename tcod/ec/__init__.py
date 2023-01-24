@@ -136,14 +136,14 @@ class ComponentDict:
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
 
     global_observers: ClassVar[List[ComponentDictObserver[Any]]] = []
-    '''A class variable of functions to call with component changes.
+    '''A class variable list of functions to call with component changes.
 
     Unpickled and copied objects are observed as if their components are newly created.
 
     These work best with frozen immutable types as components if you want to observe all value changes.
 
-    This can be used to improvise the systems of ECS.
-    Observers can collect types of components in a global registry.
+    This can be used to improvise the "systems" of ECS.
+    Observers can collect types of components in a global registry for example.
 
     Example::
 
@@ -156,8 +156,11 @@ class ComponentDict:
 
         tcod.ec.ComponentDict.global_observers.append(my_observer)
 
+    .. versionadded:: Unreleased
+
     .. warning::
         Components in a garbage collected entity are not observed as being deleted.
+        Use :any:`clear` when you are finished with an entity and want its components observed as being deleted.
     '''
 
     def __init__(self, components: Iterable[object] = ()) -> None:
@@ -290,3 +293,11 @@ class ComponentDict:
     def __repr__(self) -> str:
         """Return the representation of this ComponentDict."""
         return f"{self.__class__.__name__}([{', '.join(repr(component) for component in self._components.values())}])"
+
+    def clear(self) -> None:
+        """Remove all components from this container.
+
+        .. versionadded:: Unreleased
+        """
+        for component_cls in list(self):
+            del self[component_cls]

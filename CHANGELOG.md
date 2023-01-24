@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `ComponentDict.global_observers` for observing changes in components globally.
+- `ComponentDict.clear` for removing all components.
 
 ### Changed
 - `ComponentDict` internals have changed.  No longer uses attrs and has a less complex constructor.
