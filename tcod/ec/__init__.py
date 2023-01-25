@@ -5,7 +5,7 @@ This makes them simpler to use but they have fewer features.
 """
 from __future__ import annotations
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 
 import reprlib
 import warnings
@@ -25,7 +25,7 @@ def abstract_component(cls: Type[T]) -> Type[T]:
     Subclasses of this `cls` will now use `cls` as the key when being accessed in :any:`ComponentDict`.
     This means that ComponentDict can only hold one unique instance of this subclass.
 
-    .. deprecated:: Unreleased
+    .. deprecated:: 2.0
 
         This method of handling abstract components was deemed unnecessary.
         Instead a new component should be made to hold the base class, for example::
@@ -156,7 +156,7 @@ class ComponentDict:
 
         tcod.ec.ComponentDict.global_observers.append(my_observer)
 
-    .. versionadded:: Unreleased
+    .. versionadded:: 2.0
 
     .. warning::
         Components in a garbage collected entity are not observed as being deleted.
@@ -300,7 +300,7 @@ class ComponentDict:
     def clear(self) -> None:
         """Remove all components from this container.
 
-        .. versionadded:: Unreleased
+        .. versionadded:: 2.0
         """
         for component_cls in list(self):
             del self[component_cls]
