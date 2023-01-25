@@ -120,6 +120,10 @@ def test_ComponentDict_pickle_subclass() -> None:
     assert clone.children[0].name == "Name"
     assert repr(clone) == "ComponentDictNode([Derived(), Foo()])"
 
+    clone = copy.copy(entity)
+    clone.name = "Copy"
+    assert entity.name != clone.name
+
 
 def test_ComponentDict_unpickle_v1_1() -> None:
     # Makes sure v1.1 ComponentDict is unpicklable.

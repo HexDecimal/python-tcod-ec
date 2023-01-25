@@ -225,12 +225,15 @@ class ComponentDict:
 
     def __getstate__(self) -> Any:
         """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
-        state = {}
+        state: Dict[str, Any] = {}
         for cls in self.__class__.__mro__:
             for attr in getattr(cls, "__slots__", ()):
                 if not hasattr(self, attr):
                     continue
                 if attr == "__weakref__":
+                    continue
+                if attr == "__dict__":
+                    state[attr] = self.__dict__.copy()  # Handle __dict__ for shallow copies.
                     continue
                 state[attr] = getattr(self, attr)
         state["_components"] = tuple(state["_components"].values())
