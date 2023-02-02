@@ -9,7 +9,20 @@ __version__ = "2.0.0"
 
 import reprlib
 import warnings
-from typing import Any, Callable, ClassVar, Dict, Iterable, Iterator, List, Optional, Type, TypeVar
+from typing import (
+    Any,
+    Callable,
+    ClassVar,
+    DefaultDict,
+    Dict,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+)
 
 from typing_extensions import Self
 
@@ -99,7 +112,7 @@ class ComponentDict:
         >>> entity[Position] = Position()  # Or explicitly by key.
         >>> entity[Position]  # Access the instance with the class as the key.
         Position(x=0, y=0)
-        >>> (Position,) in entity  # Test if an entity has a set of components.
+        >>> {Position} in entity  # Test if an entity has a set of components.
         True
         >>> @attrs.define
         ... class Cursor(Position):  # If you need to store a 2nd Position then a subclass can be made.
@@ -175,7 +188,7 @@ class ComponentDict:
             real_key is key
         ), f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
 
-    def set(self, *components: T) -> Self:  # type: ignore[valid-type]  # Needs mypy >0.991
+    def set(self, *components: object) -> Self:  # type: ignore[valid-type]  # Needs mypy >0.991
         """Assign or replace the components of this entity and return self.
 
         .. versionchanged:: 1.1
@@ -200,7 +213,7 @@ class ComponentDict:
             return value  # type: ignore[no-any-return]  # Cast to T.
         return self.__missing__(key)
 
-    def __setstate__(self, state: Any) -> None:
+    def __setstate__(self, state: Any | Dict[str, Any]) -> None:
         """Unpickle instances from 1.0 or later, or complex subclasses from 2.0 or later.
 
         Component classes can change between picking and unpickling, and component order should be preserved.
@@ -211,7 +224,7 @@ class ComponentDict:
         # Normalize attrs handling.
         dict_state: Dict[str, Any] = state[1] if isinstance(state, tuple) else state
 
-        components = dict_state["_components"]
+        components: Iterable[object] = dict_state["_components"]
         del dict_state["_components"]
         if isinstance(components, dict):  # Convert v1.1 _components attribute into instance list.
             components = components.values()
@@ -223,7 +236,7 @@ class ComponentDict:
         self._components = {}
         self.set(*components)
 
-    def __getstate__(self) -> Any:
+    def __getstate__(self) -> Dict[str, Any]:
         """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
         state: Dict[str, Any] = {}
         for cls in self.__class__.__mro__:
@@ -233,7 +246,7 @@ class ComponentDict:
                 if attr == "__weakref__":
                     continue
                 if attr == "__dict__":
-                    state[attr] = self.__dict__.copy()  # Handle __dict__ for shallow copies.
+                    state.update(self.__dict__)
                     continue
                 state[attr] = getattr(self, attr)
         state["_components"] = tuple(state["_components"].values())
@@ -264,14 +277,14 @@ class ComponentDict:
         for observer in self.global_observers:
             observer(self, key, value, old_value)
 
-    def __delitem__(self, key: Type[T]) -> None:
+    def __delitem__(self, key: Type[object]) -> None:
         """Delete a component."""
         old_value = self._components[key]
         del self._components[key]
         for observer in self.global_observers:
             observer(self, key, None, old_value)
 
-    def __contains__(self, keys: Type[T] | Iterable[Type[T]]) -> bool:
+    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
 
         .. versionchanged:: 1.2
@@ -288,7 +301,7 @@ class ComponentDict:
         """Return the number of components contained in this object."""
         return len(self._components)
 
-    def __iter__(self) -> Iterator[Type[object]]:
+    def __iter__(self) -> Iterator[Type[Any]]:
         """Iterate over the keys of this container."""
         return iter(self._components)
 
@@ -304,3 +317,156 @@ class ComponentDict:
         """
         for component_cls in list(self):
             del self[component_cls]
+
+
+class Composite:
+    """A collection of multiple components organized by their inheritance tree.
+
+    Allows multiple components for the same class and allows accessing components using a shared parent class.
+
+    The order of components is preserved.
+
+        >>> import attrs
+        >>> from tcod.ec import Composite
+        >>> @attrs.define
+        ... class AreaOfEffect:
+        ...     range: int
+        >>> @attrs.define
+        ... class Circle(AreaOfEffect):
+        ...     pass
+        >>> @attrs.define
+        ... class Square(AreaOfEffect):
+        ...     pass
+        >>> spell = Composite([50, "fire", "damage", Circle(5)])
+        >>> spell[int]
+        [50]
+        >>> spell[str]
+        ['fire', 'damage']
+        >>> spell[AreaOfEffect]
+        [Circle(range=5)]
+        >>> spell[Circle]
+        [Circle(range=5)]
+        >>> spell[Square]
+        ()
+        >>> spell[object]
+        [50, 'fire', 'damage', Circle(range=5)]
+        >>> spell.remove('damage')
+        >>> spell.add("effect")
+        >>> spell
+        Composite([50, 'fire', Circle(range=5), 'effect'])
+        >>> spell[int] = (20,)
+        >>> spell[int]
+        [20]
+        >>> spell
+        Composite(['fire', Circle(range=5), 'effect', 20])
+        >>> spell[AreaOfEffect] = (Square(3),)
+        >>> spell
+        Composite(['fire', 'effect', 20, Square(range=3)])
+
+    .. versionadded:: Unreleased
+    """
+
+    __slots__ = ("_components", "__weakref__")
+
+    _components: Dict[Type[Any], List[Any]]
+
+    def __init__(self, components: Iterable[object] = ()) -> None:
+        self._components = DefaultDict(list)
+        for obj in components:
+            self.add(obj)
+
+    def add(self, component: object) -> None:
+        """Add a component to this container."""
+        for component_class in component.__class__.__mro__:
+            self._components[component_class].append(component)
+
+    def extend(self, components: Iterable[object]) -> None:
+        """Add multiple components to this container."""
+        for component in components:
+            self.add(component)
+
+    def remove(self, component: object) -> None:
+        """Remove a component from this container.
+
+        Will raise ValueError if the component was not present.
+        """
+        for component_class in component.__class__.__mro__:
+            self._components[component_class].remove(component)
+            if not self._components[component_class]:
+                del self._components[component_class]
+
+    def clear(self) -> None:
+        """Clear all components from this container."""
+        if object in self._components:
+            del self[object]
+
+    def __getitem__(self, key: Type[T]) -> Sequence[T]:
+        """Return a sequence of all instances of `key`.
+
+        If no instances of `key` are stored then return an empty sequence.
+
+        The actual list returned is internal and should not be saved.
+        Copy the value with :any:`tuple` or :any:`list` if you intend to store the sequence.
+        Do not modify the sequence.
+        """
+        return self._components.get(key, ())
+
+    def __setitem__(self, key: Type[T], values: Iterable[T]) -> None:
+        """Replace all instances of `key` with the instances of `values`."""
+        del self[key]
+        for obj in values:
+            self.add(obj)
+
+    def __delitem__(self, key: Type[object]) -> None:
+        """Remove all instances of `key` if they exist."""
+        if key not in self._components:
+            return
+        for obj in list(self._components[key]):
+            self.remove(obj)
+
+    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:
+        """Return true if all types or sub-types of `keys` exist in this entity.
+
+        Takes a single type or an iterable of types.
+        """
+        if isinstance(keys, type):
+            keys = (keys,)
+        return all(key in self._components for key in keys)
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        """Unpickle instances of this object.
+
+        Any class changes in pickled components will be reflected correctly.
+        """
+        components: Iterable[object] = state["_components"]
+        del state["_components"]
+
+        for attr, value in state.items():
+            setattr(self, attr, value)
+
+        # Unpack components with side-effects.
+        self._components = DefaultDict(list)
+        for component in components:
+            self.add(component)
+
+    def __getstate__(self) -> Dict[str, Any]:
+        """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
+        state: Dict[str, Any] = {}
+        for cls in self.__class__.__mro__:
+            for attr in getattr(cls, "__slots__", ()):
+                if not hasattr(self, attr):
+                    continue
+                if attr == "__weakref__":
+                    continue
+                if attr == "__dict__":
+                    state.update(self.__dict__)
+                    continue
+                state[attr] = getattr(self, attr)
+        state["_components"] = self._components.get(object, ())
+        return state
+
+    @reprlib.recursive_repr()
+    def __repr__(self) -> str:
+        """Return the representation of this Composite."""
+        components = ", ".join(repr(component) for component in self._components.get(object, ()))
+        return f"""{self.__class__.__name__}([{components}])"""

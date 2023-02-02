@@ -15,12 +15,19 @@ T = TypeVar("T")
 class ComponentDictNode(tcod.ec.ComponentDict):
     """Complex subclass for testing pickle."""
 
-    __slots__ = ("children", "__dict__")
+    __slots__ = ("children", "__dict__", "unset")
 
     def __init__(self, components: Iterable[object] = (), children: Iterable[ComponentDictNode] = ()) -> None:
         super().__init__(components)
         self.children = list(children)
         self.name = "Name"
+
+
+class CompositeNode(tcod.ec.Composite):
+    """Complex subclass for testing pickle."""
+
+    __slots__ = ("__dict__", "unset")
+    name: str
 
 
 @tcod.ec.abstract_component
@@ -177,3 +184,41 @@ def test_abstract_migrate() -> None:
         assert repr(entity) == "ComponentDict([Abstract(value=Derived())])"
     finally:
         tcod.ec.ComponentDict.global_observers.remove(_migrate_derived)
+
+
+def test_Composite() -> None:
+    entity = tcod.ec.Composite([base, derived])
+    assert Base in entity
+    assert {Base, Derived} in entity
+    assert list(entity[Base]) == [base, derived]
+    del entity[Base]
+    assert not entity[Base]
+    del entity[Base]
+    entity.extend((base, derived, foo))
+    assert tuple(entity[object]) == (base, derived, foo)
+    entity.clear()
+    assert tuple(entity[object]) == ()
+
+
+def test_Composite_pickle() -> None:
+    entity = tcod.ec.Composite([base, derived, foo])
+    clone = pickle.loads(pickle.dumps(entity))
+    assert repr(clone) == "Composite([Base(), Derived(), Foo()])"
+
+
+def test_Composite_pickle_subclass() -> None:
+    entity = CompositeNode([derived, foo])
+    entity.name = "Top"
+    clone: CompositeNode = pickle.loads(pickle.dumps(entity))
+    assert clone.name == entity.name
+    assert repr(clone) == "CompositeNode([Derived(), Foo()])"
+
+    clone = copy.copy(entity)
+    clone.name = "Copy"
+    assert entity.name != clone.name
+
+
+def test_Composite_unpickle_v2() -> None:
+    Composite_v2 = b"\x80\x04\x95f\x00\x00\x00\x00\x00\x00\x00\x8c\x07tcod.ec\x94\x8c\tComposite\x94\x93\x94)\x81\x94}\x94\x8c\x0b_components\x94]\x94(\x8c\x0ftcod.ec.test_ec\x94\x8c\x07Derived\x94\x93\x94)\x81\x94}\x94bh\x07\x8c\x03Foo\x94\x93\x94)\x81\x94}\x94besb."  # cspell: disable-line
+    clone = pickle.loads(Composite_v2)
+    assert repr(clone) == "Composite([Derived(), Foo()])"

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- New `tcod.ec.Composite` class.
+  Supports multiple components of the same type and looking up components with a parent type.
+
+### Fixed
+- Better handling of `__dict__` in `ComponentDict` subclasses.
+  Allowing migration of attributes to or from slots for subclasses the next time they are pickled.
 
 ## [2.0.0] - 2023-01-24
 ### Added
