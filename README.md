@@ -12,7 +12,7 @@ The key is the class of the component and can only be assigned one instance of t
 
 ```py
 >>> from attrs import define
->>> from tcod.ec import ComponentDict, abstract_component
+>>> from tcod.ec import ComponentDict
 
 # Anonymous components don't need special treatment.
 >>> @define
@@ -23,7 +23,7 @@ The key is the class of the component and can only be assigned one instance of t
 ... class Graphic:
 ...     ch: str = "@"
 >>> entity = ComponentDict([Position(1, 2), Graphic("!")])
->>> (Position, Graphic) in entity  # Check if an entity has a set of components.
+>>> {Position, Graphic} in entity  # Check if an entity has a set of components.
 True
 >>> entity[Position].y = 10  # Access components using the class as the key.
 >>> entity[Position]
