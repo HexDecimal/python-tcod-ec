@@ -363,7 +363,7 @@ class Composite:
         >>> spell
         Composite(['fire', 'effect', 20, Square(range=3)])
 
-    .. versionadded:: Unreleased
+    .. versionadded:: 2.1
     """
 
     __slots__ = ("_components", "__weakref__")
