@@ -1,4 +1,4 @@
-"""Basic Entity/Component containers for implementing composition over inheritance.
+"""Entity/Component containers for implementing composition over inheritance.
 
 Unlike with ECS, these containers are standalone.
 This makes them simpler to use but they have fewer features.
