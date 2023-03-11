@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added the dict-like `.keys()`, `.values()`, `.items()` methods to `ComponentDict`.
+- `ComponentDict` is now a `MutableMapping` subclass.
+  It can now do everything expected of a dict-like object, such as the `.values()` method.
+  Keep in mind it still uses identity comparison.
 
 ## [2.1.0] - 2023-02-03
 ### Added

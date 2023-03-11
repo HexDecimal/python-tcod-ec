@@ -10,16 +10,15 @@ __version__ = "2.1.0"
 import reprlib
 import warnings
 from typing import (
-    AbstractSet,
     Any,
     Callable,
     ClassVar,
-    Collection,
     DefaultDict,
     Dict,
     Iterable,
     Iterator,
     List,
+    MutableMapping,
     Optional,
     Sequence,
     Type,
@@ -96,11 +95,15 @@ def abstract_component(cls: Type[T]) -> Type[T]:
     return cls
 
 
-class ComponentDict:
+# Maybe needs PEP 695: https://peps.python.org/pep-0695/
+class ComponentDict(MutableMapping[Type[Any], Any]):
     """A dictionary of component instances, addressed with their class as the key.
 
     This class implements the idea of a ``Dict[Type[T], T]`` type-hint.
     This allows adding data and behavior to an object without needing to define which classes the object holds ahead of time.
+
+    For equality and hashing ComponentDict's use identity like a standard :any:`object` rather than like a :any:`dict`.
+    This means two different ComponentDict's are considered unique even if they have the same exact components.
 
         >>> import attrs
         >>> from tcod.ec import ComponentDict
@@ -200,12 +203,6 @@ class ComponentDict:
             self[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
         return self
 
-    def get(self, key: Type[T]) -> Optional[T]:
-        """Return a component, or None if it doesn't exist."""
-        if __debug__:
-            self.__assert_key(key)
-        return self._components.get(key)  # Cast to Optional[T].
-
     def __getitem__(self, key: Type[T]) -> T:
         """Return a component of type, raises KeyError if it doesn't exist."""
         if __debug__:
@@ -286,7 +283,7 @@ class ComponentDict:
         for observer in self.global_observers:
             observer(self, key, None, old_value)
 
-    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:
+    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:  # type: ignore[override]
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
 
         .. versionchanged:: 1.2
@@ -307,39 +304,15 @@ class ComponentDict:
         """Iterate over the keys of this container."""
         return iter(self._components)
 
-    def keys(self) -> AbstractSet[Type[object]]:
-        """Return the component class types held by this container.
-
-        .. versionadded:: Unreleased
-        """
-        return self._components.keys()
-
-    def values(self) -> Collection[object]:
-        """Return the component instances held by this container.
-
-        .. versionadded:: Unreleased
-        """
-        return self._components.values()
-
-    def items(self) -> AbstractSet[tuple[Type[T], T]]:  # Maybe needs PEP 695: https://peps.python.org/pep-0695/
-        """Return the component type/instance items held by this container.
-
-        .. versionadded:: Unreleased
-        """
-        return self._components.items()
+    # Use identity comparison and hashing.
+    __hash__ = object.__hash__
+    __eq__ = object.__eq__
+    __ne__ = object.__ne__
 
     @reprlib.recursive_repr()
     def __repr__(self) -> str:
         """Return the representation of this ComponentDict."""
         return f"{self.__class__.__name__}([{', '.join(repr(component) for component in self._components.values())}])"
-
-    def clear(self) -> None:
-        """Remove all components from this container.
-
-        .. versionadded:: 2.0
-        """
-        for component_cls in list(self):
-            del self[component_cls]
 
 
 class Composite:
