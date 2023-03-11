@@ -10,9 +10,11 @@ __version__ = "2.1.0"
 import reprlib
 import warnings
 from typing import (
+    AbstractSet,
     Any,
     Callable,
     ClassVar,
+    Collection,
     DefaultDict,
     Dict,
     Iterable,
@@ -304,6 +306,27 @@ class ComponentDict:
     def __iter__(self) -> Iterator[Type[Any]]:
         """Iterate over the keys of this container."""
         return iter(self._components)
+
+    def keys(self) -> AbstractSet[Type[object]]:
+        """Return the component class types held by this container.
+
+        .. versionadded:: Unreleased
+        """
+        return self._components.keys()
+
+    def values(self) -> Collection[object]:
+        """Return the component instances held by this container.
+
+        .. versionadded:: Unreleased
+        """
+        return self._components.values()
+
+    def items(self) -> AbstractSet[tuple[Type[T], T]]:  # Maybe needs PEP 695: https://peps.python.org/pep-0695/
+        """Return the component type/instance items held by this container.
+
+        .. versionadded:: Unreleased
+        """
+        return self._components.items()
 
     @reprlib.recursive_repr()
     def __repr__(self) -> str:

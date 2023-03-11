@@ -31,12 +31,12 @@ class CompositeNode(tcod.ec.Composite):
 
 
 @tcod.ec.abstract_component
-@attrs.define
+@attrs.define(frozen=True)
 class Base:
     pass
 
 
-@attrs.define
+@attrs.define(frozen=True)
 class Derived(Base):
     pass
 
@@ -46,12 +46,12 @@ class Abstract:
     value: Base
 
 
-@attrs.define
+@attrs.define(frozen=True)
 class Foo:
     pass
 
 
-@attrs.define
+@attrs.define(frozen=True)
 class Missing:
     pass
 
@@ -79,6 +79,10 @@ def test_ComponentDict() -> None:
         entity[Missing]
     with pytest.raises(TypeError):
         entity[Derived] = derived
+
+    assert set(entity) == entity.keys() == {Base, Foo}
+    assert set(entity.values()) == {derived, foo}
+    assert set(zip(entity.keys(), entity.values())) == set(entity.items())
 
     entity = tcod.ec.ComponentDict()
     assert Base not in entity
