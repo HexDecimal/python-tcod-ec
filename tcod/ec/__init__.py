@@ -188,7 +188,7 @@ class ComponentDict:
             real_key is key
         ), f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
 
-    def set(self, *components: object) -> Self:  # type: ignore[valid-type]  # Needs mypy >0.991
+    def set(self, *components: object) -> Self:
         """Assign or replace the components of this entity and return self.
 
         .. versionchanged:: 1.1
