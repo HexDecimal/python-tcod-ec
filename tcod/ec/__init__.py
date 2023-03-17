@@ -250,7 +250,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         return state
 
     def __missing__(self, key: type[T]) -> T:
-        '''Called when a key is missing.  Raises KeyError with the missing key.
+        '''Raise KeyError with the missing key.  Called when a key is missing.
 
         Example::
 

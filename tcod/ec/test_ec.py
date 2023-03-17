@@ -9,6 +9,8 @@ import pytest
 
 import tcod.ec
 
+# ruff: noqa: D100 D101 D103 D107
+
 T = TypeVar("T")
 
 
