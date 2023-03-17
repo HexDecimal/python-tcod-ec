@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 import pickle
-from typing import Dict, Iterable, Type, TypeVar
+from typing import Iterable, TypeVar
 
 import attrs
 import pytest
@@ -74,7 +74,7 @@ def test_ComponentDict() -> None:
     assert repr(entity) == "ComponentDict([Derived(), Foo()])"
     assert entity[Base] is derived
     assert entity[Foo] is foo
-    assert len(entity) == 2
+    assert len(entity) == 2  # noqa: PLR
     with pytest.raises(KeyError):
         entity[Missing]
     with pytest.raises(TypeError):
@@ -152,9 +152,9 @@ def test_ComponentDict_unpickle_v2() -> None:
 
 
 def test_ComponentDict_copy() -> None:
-    caught: Dict[tcod.ec.ComponentDict, Dict[Type[object], object]] = {}
+    caught: dict[tcod.ec.ComponentDict, dict[type[object], object]] = {}
 
-    def _catch_components(entity: tcod.ec.ComponentDict, kind: Type[T], value: T | None, old_value: T | None) -> None:
+    def _catch_components(entity: tcod.ec.ComponentDict, kind: type[T], value: T | None, old_value: T | None) -> None:
         caught.setdefault(entity, {})
         caught[entity][kind] = value
 
@@ -176,7 +176,7 @@ def test_ComponentDict_copy() -> None:
         tcod.ec.ComponentDict.global_observers.remove(_catch_components)
 
 
-def _migrate_derived(entity: tcod.ec.ComponentDict, key: Type[T], value: T | None, old_value: T | None) -> None:
+def _migrate_derived(entity: tcod.ec.ComponentDict, key: type[T], value: T | None, old_value: T | None) -> None:
     """Convert Base and Derived to being held by Abstract."""
     if isinstance(value, Base):
         entity.set(Abstract(value))

@@ -14,10 +14,8 @@ from typing import (
     Callable,
     ClassVar,
     DefaultDict,
-    Dict,
     Iterable,
     Iterator,
-    List,
     MutableMapping,
     Optional,
     Sequence,
@@ -33,7 +31,7 @@ T = TypeVar("T")
 ComponentDictObserver = Callable[["ComponentDict", Type[T], Optional[T], Optional[T]], None]
 
 
-def abstract_component(cls: Type[T]) -> Type[T]:
+def abstract_component(cls: type[T]) -> type[T]:
     """Register class `cls` as an abstract component and return it.
 
     Subclasses of this `cls` will now use `cls` as the key when being accessed in :any:`ComponentDict`.
@@ -150,10 +148,10 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
 
     __slots__ = ("_components", "__weakref__")
 
-    _components: Dict[Type[Any], Any]
+    _components: dict[type[Any], Any]
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
 
-    global_observers: ClassVar[List[ComponentDictObserver[Any]]] = []
+    global_observers: ClassVar[list[ComponentDictObserver[Any]]] = []
     '''A class variable list of functions to call with component changes.
 
     Unpickled and copied objects are observed as if their components are newly created.
@@ -203,7 +201,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
             self[getattr(component, "_COMPONENT_TYPE", component.__class__)] = component
         return self
 
-    def __getitem__(self, key: Type[T]) -> T:
+    def __getitem__(self, key: type[T]) -> T:
         """Return a component of type, raises KeyError if it doesn't exist."""
         if __debug__:
             self.__assert_key(key)
@@ -212,7 +210,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
             return value  # type: ignore[no-any-return]  # Cast to T.
         return self.__missing__(key)
 
-    def __setstate__(self, state: Any | Dict[str, Any]) -> None:
+    def __setstate__(self, state: Any | dict[str, Any]) -> None:
         """Unpickle instances from 1.0 or later, or complex subclasses from 2.0 or later.
 
         Component classes can change between picking and unpickling, and component order should be preserved.
@@ -221,7 +219,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         The unpickled object acts as if its components are newly assigned to it when observed.
         """
         # Normalize attrs handling.
-        dict_state: Dict[str, Any] = state[1] if isinstance(state, tuple) else state
+        dict_state: dict[str, Any] = state[1] if isinstance(state, tuple) else state
 
         components: Iterable[object] = dict_state["_components"]
         del dict_state["_components"]
@@ -235,9 +233,9 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         self._components = {}
         self.set(*components)
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
-        state: Dict[str, Any] = {}
+        state: dict[str, Any] = {}
         for cls in self.__class__.__mro__:
             for attr in getattr(cls, "__slots__", ()):
                 if not hasattr(self, attr):
@@ -251,7 +249,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         state["_components"] = tuple(state["_components"].values())
         return state
 
-    def __missing__(self, key: Type[T]) -> T:
+    def __missing__(self, key: type[T]) -> T:
         '''Called when a key is missing.  Raises KeyError with the missing key.
 
         Example::
@@ -266,24 +264,25 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         '''
         raise KeyError(key)
 
-    def __setitem__(self, key: Type[T], value: T) -> None:
+    def __setitem__(self, key: type[T], value: T) -> None:
         """Set or replace a component."""
         valid_key = getattr(value, "_COMPONENT_TYPE", value.__class__)
         if key is not valid_key:
-            raise TypeError(f"{value!r} is being assigned to {key!r} but it belongs to {valid_key!r} instead!")
+            msg = f"{value!r} is being assigned to {key!r} but it belongs to {valid_key!r} instead!"
+            raise TypeError(msg)
         old_value = self._components.get(key)
         self._components[key] = value
         for observer in self.global_observers:
             observer(self, key, value, old_value)
 
-    def __delitem__(self, key: Type[object]) -> None:
+    def __delitem__(self, key: type[object]) -> None:
         """Delete a component."""
         old_value = self._components[key]
         del self._components[key]
         for observer in self.global_observers:
             observer(self, key, None, old_value)
 
-    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:  # type: ignore[override]
+    def __contains__(self, keys: type[object] | Iterable[type[object]]) -> bool:  # type: ignore[override]
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
 
         .. versionchanged:: 1.2
@@ -300,7 +299,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         """Return the number of components contained in this object."""
         return len(self._components)
 
-    def __iter__(self) -> Iterator[Type[Any]]:
+    def __iter__(self) -> Iterator[type[Any]]:
         """Iterate over the keys of this container."""
         return iter(self._components)
 
@@ -364,7 +363,7 @@ class Composite:
 
     __slots__ = ("_components", "__weakref__")
 
-    _components: Dict[Type[Any], List[Any]]
+    _components: dict[type[Any], list[Any]]
 
     def __init__(self, components: Iterable[object] = ()) -> None:
         self._components = DefaultDict(list)
@@ -396,7 +395,7 @@ class Composite:
         if object in self._components:
             del self[object]
 
-    def __getitem__(self, key: Type[T]) -> Sequence[T]:
+    def __getitem__(self, key: type[T]) -> Sequence[T]:
         """Return a sequence of all instances of `key`.
 
         If no instances of `key` are stored then return an empty sequence.
@@ -407,20 +406,20 @@ class Composite:
         """
         return self._components.get(key, ())
 
-    def __setitem__(self, key: Type[T], values: Iterable[T]) -> None:
+    def __setitem__(self, key: type[T], values: Iterable[T]) -> None:
         """Replace all instances of `key` with the instances of `values`."""
         del self[key]
         for obj in values:
             self.add(obj)
 
-    def __delitem__(self, key: Type[object]) -> None:
+    def __delitem__(self, key: type[object]) -> None:
         """Remove all instances of `key` if they exist."""
         if key not in self._components:
             return
         for obj in list(self._components[key]):
             self.remove(obj)
 
-    def __contains__(self, keys: Type[object] | Iterable[Type[object]]) -> bool:
+    def __contains__(self, keys: type[object] | Iterable[type[object]]) -> bool:
         """Return true if all types or sub-types of `keys` exist in this entity.
 
         Takes a single type or an iterable of types.
@@ -429,7 +428,7 @@ class Composite:
             keys = (keys,)
         return all(key in self._components for key in keys)
 
-    def __setstate__(self, state: Dict[str, Any]) -> None:
+    def __setstate__(self, state: dict[str, Any]) -> None:
         """Unpickle instances of this object.
 
         Any class changes in pickled components will be reflected correctly.
@@ -445,9 +444,9 @@ class Composite:
         for component in components:
             self.add(component)
 
-    def __getstate__(self) -> Dict[str, Any]:
+    def __getstate__(self) -> dict[str, Any]:
         """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
-        state: Dict[str, Any] = {}
+        state: dict[str, Any] = {}
         for cls in self.__class__.__mro__:
             for attr in getattr(cls, "__slots__", ()):
                 if not hasattr(self, attr):
