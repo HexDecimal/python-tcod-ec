@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It can now do everything expected of a dict-like object, such as the `.values()` method.
   Keep in mind it still uses identity comparison.
 
+### Changed
+- `abstract_component` is no longer deprecated.
+
 ## [2.1.0] - 2023-02-03
 ### Added
 - New `tcod.ec.Composite` class.

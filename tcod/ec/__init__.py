@@ -8,7 +8,6 @@ from __future__ import annotations
 __version__ = "2.1.0"
 
 import reprlib
-import warnings
 from typing import (
     Any,
     Callable,
@@ -37,25 +36,6 @@ def abstract_component(cls: type[T]) -> type[T]:
     Subclasses of this `cls` will now use `cls` as the key when being accessed in :any:`ComponentDict`.
     This means that ComponentDict can only hold one unique instance of this subclass.
 
-    .. deprecated:: 2.0
-
-        This method of handling abstract components was deemed unnecessary.
-        Instead a new component should be made to hold the base class, for example::
-
-            >>> from tcod.ec import ComponentDict
-            >>> import attrs
-            >>> @attrs.define
-            ... class Base:
-            ...     pass
-            >>> @attrs.define
-            ... class Derived(Base):
-            ...     pass
-            >>> @attrs.define
-            ... class Abstract(Base):
-            ...     value: Base
-            >>> ComponentDict([Abstract(Derived())])
-            ComponentDict([Abstract(value=Derived())])
-
     Example::
 
         >>> from tcod.ec import ComponentDict, abstract_component
@@ -83,12 +63,6 @@ def abstract_component(cls: type[T]) -> type[T]:
         >>> entity[Base]
         Derived()
     """
-    warnings.warn(
-        "The abstract_component decorator is deprecated."
-        "  To store a derived class: make a new component which stores the base class and holds the derived object.",
-        FutureWarning,
-        stacklevel=2,
-    )
     cls._COMPONENT_TYPE = cls  # type: ignore[attr-defined]
     return cls
 
