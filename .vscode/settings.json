@@ -45,6 +45,7 @@
     ],
     "python.formatting.provider": "black",
     "editor.codeActionsOnSave": {
+        "source.fixAll": true, // Support Ruff auto-fixes.
         "source.organizeImports": true // Runs isort.
     },
     "editor.rulers": [
