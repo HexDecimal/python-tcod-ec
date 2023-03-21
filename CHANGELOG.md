@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ComponentDict` is now a `MutableMapping` subclass.
   It can now do everything expected of a dict-like object, such as the `.values()` method.
   Keep in mind it still uses identity comparison.
+- Added local component observers to `ComponentDict`.
 
 ### Changed
 - `abstract_component` is no longer deprecated.

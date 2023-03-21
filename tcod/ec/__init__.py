@@ -28,6 +28,7 @@ T = TypeVar("T")
 
 
 ComponentDictObserver = Callable[["ComponentDict", Type[T], Optional[T], Optional[T]], None]
+_ComponentDictObserver = Callable[["ComponentDict", Optional[T], Optional[T]], None]
 
 
 def abstract_component(cls: type[T]) -> type[T]:
@@ -100,6 +101,24 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         >>> ComponentDict([Position(1, 2), Position(3, 4)])  # The same component always overwrites the previous one.
         ComponentDict([Position(x=3, y=4)])
 
+    Observers can be used to track the assignment of components.
+    These work best when the components are immutable and frozen.
+
+        >>> @attrs.define(frozen=True)
+        ... class Position():
+        ...     x: int = 0
+        ...     y: int = 0
+        >>> def track_position(entity: ComponentDict, new_pos: Position | None, old_pos: Position | None) -> None:
+        ...     print(f"Moved: {old_pos} -> {new_pos}")
+        >>> entity = ComponentDict(components=[Position()], observers={Position: [track_position]})
+        Moved: None -> Position(x=0, y=0)
+        >>> entity
+        ComponentDict([Position(x=0, y=0)], observers=...)
+        >>> entity[Position] = Position(1, 2)
+        Moved: Position(x=0, y=0) -> Position(x=1, y=2)
+        >>> del entity[Position]
+        Moved: Position(x=1, y=2) -> None
+
     Custom functions can be added to the class variable :any:`global_observers` to trigger side-effects on component assignment.
     This can be used to register components to a global system, handle save migration, or other effects::
 
@@ -120,7 +139,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         >>> ComponentDict.global_observers.remove(print_changes)
     """
 
-    __slots__ = ("_components", "__weakref__")
+    __slots__ = ("_components", "observers", "__weakref__")
 
     _components: dict[type[Any], Any]
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
@@ -153,7 +172,22 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         Use :any:`clear` when you are finished with an entity and want its components observed as being deleted.
     '''
 
-    def __init__(self, components: Iterable[object] = ()) -> None:
+    def __init__(
+        self,
+        components: Iterable[object] = (),
+        observers: dict[type[Any], list[_ComponentDictObserver[Any]]] | None = None,
+    ) -> None:
+        """Initialize a ComponentDict.
+
+        Args:
+            components: An iterable of component objects.
+                These are assigned by their type.
+                If any components share the same type then the latter components overwrite the previous ones.
+            observers: A dictionary of component observers.
+                This is held by reference, so the same dict my be assigned to multiple ComponentDict's.
+                Observers are called with the `components` used to create the ComponentDict.
+        """
+        self.observers: dict[type[Any], list[_ComponentDictObserver[Any]]] = {} if observers is None else observers
         self._components = {}
         self.set(*components)
 
@@ -200,12 +234,19 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         if isinstance(components, dict):  # Convert v1.1 _components attribute into instance list.
             components = components.values()
 
+        observers = {}
+        if "observers" in dict_state:  # Missing from old objects.
+            observers = dict_state["observers"]
+            del dict_state["observers"]
+
         for attr, value in dict_state.items():
             setattr(self, attr, value)
 
-        # Unpack components with side-effects.
+        # Unpack components with global side-effects.
+        self.observers = {}
         self._components = {}
         self.set(*components)
+        self.observers = observers
 
     def __getstate__(self) -> dict[str, Any]:
         """Pickle this instance.  Any subclass slots and dict attributes will also be saved."""
@@ -246,15 +287,19 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
             raise TypeError(msg)
         old_value = self._components.get(key)
         self._components[key] = value
-        for observer in self.global_observers:
-            observer(self, key, value, old_value)
+        for global_observer in self.global_observers:
+            global_observer(self, key, value, old_value)
+        for local_observer in self.observers.get(key, ()):
+            local_observer(self, value, old_value)
 
     def __delitem__(self, key: type[object]) -> None:
         """Delete a component."""
         old_value = self._components[key]
         del self._components[key]
-        for observer in self.global_observers:
-            observer(self, key, None, old_value)
+        for global_observer in self.global_observers:
+            global_observer(self, key, None, old_value)
+        for local_observer in self.observers.get(key, ()):
+            local_observer(self, None, old_value)
 
     def __contains__(self, keys: type[object] | Iterable[type[object]]) -> bool:  # type: ignore[override]
         """Return true if the types of component exist in this entity.  Takes a single type or an iterable of types.
@@ -285,7 +330,10 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
     @reprlib.recursive_repr()
     def __repr__(self) -> str:
         """Return the representation of this ComponentDict."""
-        return f"{self.__class__.__name__}([{', '.join(repr(component) for component in self._components.values())}])"
+        params = [f"[{', '.join(repr(component) for component in self._components.values())}]"]
+        if self.observers:
+            params.append(f"observers={self.observers!r}")
+        return f"{self.__class__.__name__}({', '.join(params)})"
 
 
 class Composite:
@@ -340,6 +388,11 @@ class Composite:
     _components: dict[type[Any], list[Any]]
 
     def __init__(self, components: Iterable[object] = ()) -> None:
+        """Initialize a Composite object from an iterable of components.
+
+        Args:
+            components: An iterable of objects.
+        """
         self._components = DefaultDict(list)
         for obj in components:
             self.add(obj)
