@@ -5,7 +5,7 @@ This makes them simpler to use but they have fewer features.
 """
 from __future__ import annotations
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 
 import reprlib
 from typing import (
@@ -137,6 +137,9 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         >>> del entity[Position]
         Position: Position(x=1, y=2) -> None
         >>> ComponentDict.global_observers.remove(print_changes)
+
+    .. versionchanged:: 2.2
+        Is now a :any:`collections.abc.MutableMapping` and has all of the relevant methods such as ``.values()``.
     """
 
     __slots__ = ("_components", "observers", "__weakref__")
@@ -186,8 +189,15 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
             observers: A dictionary of component observers.
                 This is held by reference, so the same dict my be assigned to multiple ComponentDict's.
                 Observers are called with the `components` used to create the ComponentDict.
+
+        .. versionchanged:: 2.2
+            Added `observers` parameter.
         """
         self.observers: dict[type[Any], list[_ComponentDictObserver[Any]]] = {} if observers is None else observers
+        """A dictionary of a list of component observers.
+
+        .. versionadded:: 2.2
+        """
         self._components = {}
         self.set(*components)
 
