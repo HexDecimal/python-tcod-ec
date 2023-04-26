@@ -5,7 +5,7 @@ This makes them simpler to use but they have fewer features.
 """
 from __future__ import annotations
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"
 
 import reprlib
 from typing import (
