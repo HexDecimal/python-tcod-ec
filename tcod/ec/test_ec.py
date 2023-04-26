@@ -9,7 +9,7 @@ import pytest
 
 import tcod.ec
 
-# ruff: noqa: D100 D101 D103 D107
+# ruff: noqa: D100 D101 D103 D107 S301
 
 T = TypeVar("T")
 

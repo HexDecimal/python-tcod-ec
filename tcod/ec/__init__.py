@@ -9,6 +9,7 @@ __version__ = "2.2.0"
 
 import reprlib
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -20,6 +21,7 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    overload,
 )
 
 from typing_extensions import Self
@@ -344,6 +346,24 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         if self.observers:
             params.append(f"observers={self.observers!r}")
         return f"{self.__class__.__name__}({', '.join(params)})"
+
+    if TYPE_CHECKING:
+
+        @overload
+        def get(self, __key: type[T]) -> T | None:
+            ...
+
+        @overload
+        def get(self, __key: type[T], __default: T) -> T:
+            ...
+
+        def get(self, __key: type[T], __default: T | None = None) -> T | None:
+            """Return a component, returns None or a default value when the component is missing."""
+            # Type-hinted get override.
+
+        def setdefault(self, __key: type[T], __default: T) -> T:  # type: ignore[override]
+            """Assign a default value if a component is missing, then returns the current value."""
+            # Type-hinted setdefault override, None is not a valid default.
 
 
 class Composite:
