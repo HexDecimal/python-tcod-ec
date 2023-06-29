@@ -31,14 +31,14 @@ jobs:
       - name: isort
         run: isort tcod/ --check --diff
 
-  flake8:
+  ruff:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Install Flake8
-        run: pip install Flake8
-      - name: Flake8
-        run: flake8 tcod/
+      - name: Install Ruff
+        run: pip install ruff
+      - name: Ruff
+        run: ruff .
 
   test:
     runs-on: ubuntu-latest
