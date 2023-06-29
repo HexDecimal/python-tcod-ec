@@ -16,6 +16,7 @@
         "Benesch",
         "codecov",
         "dtype",
+        "furo",
         "genindex",
         "intersphinx",
         "isort",

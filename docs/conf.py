@@ -14,6 +14,7 @@ project = "tcod-ec"
 copyright = "2023, Kyle Benesch"
 author = "Kyle Benesch"
 release = __version__
+version = ".".join(release.split(".")[:2])
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -32,13 +33,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_theme = "furo"
+# html_static_path = ["_static"]
 
 
 intersphinx_mapping = {
-    "https://docs.python.org/3/": None,
-    "https://python-tcod.readthedocs.io/en/latest/": None,
+    "python": ("https://docs.python.org/3/", None),
+    "tcod": ("https://python-tcod.readthedocs.io/en/latest/", None),
 }
 
 autodoc_typehints = "description"

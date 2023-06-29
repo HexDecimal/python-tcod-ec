@@ -1,4 +1,4 @@
 myst-parser
 sphinx>=5.3.0
-sphinx_rtd_theme
+furo>=2023.5.20
 attrs
