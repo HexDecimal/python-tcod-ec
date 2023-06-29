@@ -85,7 +85,7 @@ def test_ComponentDict() -> None:
     assert set(entity) == entity.keys() == {Base, Foo}
     assert set(entity.values()) == {derived, foo}
     assert set(zip(entity.keys(), entity.values())) == set(entity.items())
-    assert entity == entity
+    assert entity == entity  # noqa: PLR0124
     assert entity != tcod.ec.ComponentDict(entity.values())
 
     entity = tcod.ec.ComponentDict()
