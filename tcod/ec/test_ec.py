@@ -9,7 +9,7 @@ import pytest
 
 import tcod.ec
 
-# ruff: noqa: D100 D101 D103 D107 S301
+# ruff: noqa: D100, D101, D103, D107, S301
 
 T = TypeVar("T")
 
@@ -76,7 +76,7 @@ def test_ComponentDict() -> None:
     assert repr(entity) == "ComponentDict([Derived(), Foo()])"
     assert entity[Base] is derived
     assert entity[Foo] is foo
-    assert len(entity) == 2  # noqa: PLR
+    assert len(entity) == 2  # noqa: PLR2004
     with pytest.raises(KeyError):
         entity[Missing]
     with pytest.raises(TypeError):

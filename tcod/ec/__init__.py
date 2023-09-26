@@ -230,7 +230,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
             return value  # type: ignore[no-any-return]  # Cast to T.
         return self.__missing__(key)
 
-    def __setstate__(self, state: Any | dict[str, Any]) -> None:
+    def __setstate__(self, state: Any | dict[str, Any]) -> None:  # noqa: ANN401
         """Unpickle instances from 1.0 or later, or complex subclasses from 2.0 or later.
 
         Component classes can change between picking and unpickling, and component order should be preserved.
