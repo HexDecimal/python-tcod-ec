@@ -8,7 +8,7 @@ import sys
 
 sys.path.append("..")
 
-from tcod.ec import __version__  # noqa
+from tcod.ec import __version__
 
 project = "tcod-ec"
 copyright = "2023, Kyle Benesch"
