@@ -3,6 +3,7 @@
 Unlike with ECS, these containers are standalone.
 This makes them simpler to use but they have fewer features.
 """
+
 from __future__ import annotations
 
 __version__ = "2.2.1"
@@ -350,12 +351,10 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
     if TYPE_CHECKING:
 
         @overload
-        def get(self, __key: type[T]) -> T | None:
-            ...
+        def get(self, __key: type[T]) -> T | None: ...
 
         @overload
-        def get(self, __key: type[T], __default: T) -> T:
-            ...
+        def get(self, __key: type[T], __default: T) -> T: ...
 
         def get(self, __key: type[T], __default: T | None = None) -> T | None:
             """Return a component, returns None or a default value when the component is missing."""
