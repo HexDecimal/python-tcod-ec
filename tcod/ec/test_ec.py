@@ -17,7 +17,7 @@ T = TypeVar("T")
 class ComponentDictNode(tcod.ec.ComponentDict):
     """Complex subclass for testing pickle."""
 
-    __slots__ = ("children", "__dict__", "unset")
+    __slots__ = ("__dict__", "children", "unset")
 
     def __init__(self, components: Iterable[object] = (), children: Iterable[ComponentDictNode] = ()) -> None:
         super().__init__(components)
