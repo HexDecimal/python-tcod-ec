@@ -145,7 +145,7 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
         Is now a :any:`collections.abc.MutableMapping` and has all of the relevant methods such as ``.values()``.
     """
 
-    __slots__ = ("_components", "observers", "__weakref__")
+    __slots__ = ("__weakref__", "_components", "observers")
 
     _components: dict[type[Any], Any]
     """The actual components stored in a dictionary.  The indirection is needed to make type hints work."""
@@ -208,9 +208,9 @@ class ComponentDict(MutableMapping[Type[Any], Any]):
     def __assert_key(key: T) -> None:
         """Assert that this key is either an abstract component or an anonymous component."""
         real_key = getattr(key, "_COMPONENT_TYPE", key)
-        assert (
-            real_key is key
-        ), f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
+        assert real_key is key, (
+            f"{key!r} is a child of an abstract component and can only be accessed with {real_key!r}."
+        )
 
     def set(self, *components: object) -> Self:
         """Assign or replace the components of this entity and return self.
@@ -412,7 +412,7 @@ class Composite:
     .. versionadded:: 2.1
     """
 
-    __slots__ = ("_components", "__weakref__")
+    __slots__ = ("__weakref__", "_components")
 
     _components: dict[type[Any], list[Any]]
 
